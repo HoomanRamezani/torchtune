@@ -915,16 +915,16 @@ def recipe_main(cfg: DictConfig) -> None:
             "If using tune CLI, please specify --nnodes 1 and --nproc_per_node [num_gpus]"
         )
     # Use dynamic backend selection as in file A
-    device_type = cfg.device
-    fsdp_cpu_offload = cfg.get("fsdp_cpu_offload", False)
-    enable_async_checkpointing = cfg.get("enable_async_checkpointing", False)
-    print(">>> 3")
-    distributed_backend = training.get_distributed_backend(
-        device_type,
-        offload_ops_to_cpu=fsdp_cpu_offload or enable_async_checkpointing,
-    )
+    # device_type = cfg.device
+    #fsdp_cpu_offload = cfg.get("fsdp_cpu_offload", False)
+    #enable_async_checkpointing = cfg.get("enable_async_checkpointing", False)
+    #print(">>> 3")
+    #distributed_backend = training.get_distributed_backend(
+    #    device_type,
+    #    offload_ops_to_cpu=fsdp_cpu_offload or enable_async_checkpointing,
+    #)
     print(">>> Distributed backend is", distributed_backend)
-    init_process_group(distributed_backend)
+    init_process_group("cuda:nccl,cpu:gloo")
     if fsdp_cpu_offload:
         # Utilize all available CPU cores for intra-op parallelism.
         training.set_torch_num_threads()

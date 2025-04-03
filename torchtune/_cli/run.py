@@ -84,7 +84,7 @@ For a list of all possible recipes, run `tune ls`."""
         """Run a recipe with torchrun."""
         # TODO (rohan-varma): Add check that nproc_per_node <= cuda device count. Currently,
         # we don't do this since we test on CPUs for distributed. Will update once multi GPU CI is supported.
-        print("Running with torchrun...")
+        print("!Running with torchrun...")
         # Have to reset the argv so that the recipe can be run with the correct arguments
         args.training_script = args.recipe
         args.training_script_args = args.recipe_args
@@ -92,12 +92,14 @@ For a list of all possible recipes, run `tune ls`."""
         # If the user does not explicitly pass a rendezvous endpoint, run in standalone mode.
         # This allows running multiple distributed training jobs simultaneously.
         if not args.rdzv_endpoint:
+            print("Running with standalone")
             args.standalone = True
 
         # torchtune built-in recipes are specified with an absolute posix path, but
         # custom recipes are specified as a relative module dot path and need to be
         # run with python -m
         args.module = not is_builtin
+        print("args.module", args.module)
         run(args)
 
     def _run_single_device(self, args: argparse.Namespace, is_builtin: bool):

@@ -545,6 +545,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
             training.log_memory_stats(memory_stats)
 
         # synchronize before training begins (use device_ids for robustness)
+        print(">>> Barrier is",self._device.index)
         torch.distributed.barrier(device_ids=[self._device.index])
 
         return model
@@ -919,6 +920,7 @@ def recipe_main(cfg: DictConfig) -> None:
         device_type,
         offload_ops_to_cpu=fsdp_cpu_offload or enable_async_checkpointing,
     )
+    print(">>> Distributed backend is", distributed_backend)
     init_process_group(distributed_backend)
     if fsdp_cpu_offload:
         # Utilize all available CPU cores for intra-op parallelism.

@@ -907,7 +907,9 @@ def recipe_main(cfg: DictConfig) -> None:
     """
     Entry point for the recipe.
     """
+    print(">>> 1")
     if not training.is_distributed():
+        print(">>> 2")
         raise RuntimeError(
             "Distributed finetune recipe should be run via a distributed launcher."
             "If using tune CLI, please specify --nnodes 1 and --nproc_per_node [num_gpus]"
@@ -916,6 +918,7 @@ def recipe_main(cfg: DictConfig) -> None:
     device_type = cfg.device
     fsdp_cpu_offload = cfg.get("fsdp_cpu_offload", False)
     enable_async_checkpointing = cfg.get("enable_async_checkpointing", False)
+    print(">>> 3")
     distributed_backend = training.get_distributed_backend(
         device_type,
         offload_ops_to_cpu=fsdp_cpu_offload or enable_async_checkpointing,

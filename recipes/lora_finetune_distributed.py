@@ -543,8 +543,8 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
             memory_stats = training.get_memory_stats(device=self._device)
             training.log_memory_stats(memory_stats)
 
-        # synchronize before training begins
-        torch.distributed.barrier()
+        # synchronize before training begins (use device_ids for robustness)
+        torch.distributed.barrier(device_ids=[self._device.index])
 
         return model
 
@@ -904,28 +904,31 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
 def recipe_main(cfg: DictConfig) -> None:
     """
     Entry point for the recipe.
-
-    Configurable parameters are read in the following order:
-        - Parameters specified in config (see available configs through ``tune ls``)
-        - Overwritten by arguments from the command-line
     """
     if not training.is_distributed():
         raise RuntimeError(
             "Distributed finetune recipe should be run via a distributed launcher."
             "If using tune CLI, please specify --nnodes 1 and --nproc_per_node [num_gpus]"
         )
-    init_process_group("cuda:nccl,cpu:gloo")
-    if cfg.get("fsdp_cpu_offload", False):
-        # Utilize all available CPU cores for intra-op parallelism. This provides ~2x
-        # speed up when benchmarking fused AdamW on CPU
+    # Use dynamic backend selection as in file A
+    device_type = cfg.device
+    fsdp_cpu_offload = cfg.get("fsdp_cpu_offload", False)
+    enable_async_checkpointing = cfg.get("enable_async_checkpointing", False)
+    distributed_backend = training.get_distributed_backend(
+        device_type,
+        offload_ops_to_cpu=fsdp_cpu_offload or enable_async_checkpointing,
+    )
+    init_process_group(distributed_backend)
+    if fsdp_cpu_offload:
+        # Utilize all available CPU cores for intra-op parallelism.
         training.set_torch_num_threads()
 
     config.log_config(recipe_name="LoRAFinetuneRecipeDistributed", cfg=cfg)
-
     recipe = LoRAFinetuneRecipeDistributed(cfg=cfg)
     recipe.setup(cfg=cfg)
     recipe.train()
     recipe.cleanup()
+
 
 
 if __name__ == "__main__":

@@ -135,8 +135,9 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
             raise ValueError(
                 "full fp16 training is not supported with this recipe. Please use bf16 or fp32 instead."
             )
-
+        print(">>> Got WR and rank")
         self.world_size, self.rank = utils.get_world_size_and_rank()
+        print(">>> Got WR and rank" self.world_size, self.rank)
 
         self._is_rank_zero = self.rank == 0
 
@@ -608,7 +609,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         if "left_pad_sequence" in collate_fn:
             raise RuntimeError("left_pad_sequence collator is only for inference.")
         collate_fn = _get_component_from_path(collate_fn)
-
+        self.world_size, self.rank = 1, 0
         sampler = StatefulDistributedSampler(
             ds,
             num_replicas=self.world_size,
